@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<header>
+    <style>
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            position: relative;
+        }
+    </style>
+</header>
+
+<body style="width:100vw;height:100vh;margin: 0 0;">
+</body>
+<script>
+    let radias = 3;
+    let gravity = 1;
+    let maxNum = 3000;
+    let width = document.body.clientWidth;
+    let height = document.body.clientHeight;
+    let c = document.createElement("canvas");
+    var ctx = c.getContext("2d");
+    c.width = width;
+    c.height = height;
+    document.body.appendChild(c);
+
+    function dateFtt(fmt, date) { //author: meizz   
+        var o = {
+            "M+": date.getMonth() + 1,                 //月份   
+            "d+": date.getDate(),                    //日   
+            "h+": date.getHours(),                   //小时   
+            "m+": date.getMinutes(),                 //分   
+            "s+": date.getSeconds(),                 //秒   
+            "q+": Math.floor((date.getMonth() + 3) / 3), //季度   
+            "S": date.getMilliseconds()             //毫秒   
+        };
+        if (/(y+)/.test(fmt))
+            fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt))
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    }
+    function initDot(dot, index) {
+        getPosition(dot);
+        initV(dot);
+        getColor(dot, index);
+    }
+    function getPosition(dot) {
+        dot.x = 400 + dot.x * 8;
+        dot.y = 150 + dot.y * 8;
+    }
+
+    function initV(dot) {
+        dot.vx = Math.floor((Math.random() * 16)) - 8;
+        dot.vy = Math.floor((Math.random() * 16)) - 8;
+    }
+
+    function getColor(dot, index) {
+        let colors = ['#FFA54F', '#FF83FA', '#B0C4DE'];
+        let alpha = dot.alpha.toString(16);
+        alpha = alpha.length === 2 ? alpha : '0' + alpha;
+        dot.color = colors[index % colors.length] + alpha;
+        //return colors[Math.floor((Math.random() * colors.length))] + alpha;
+        //return colors[index % colors.length] + alpha;
+    }
+    let leftDots = [];
+    let text = '';
+
+    function anni() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        const textTemp = dateFtt('hh:mm:ss', new Date());
+        ctx.font = "24px 黑体";
+        ctx.fillText(textTemp, 0, 40);
+        var textWidth = ctx.measureText(textTemp).width;
+        var data = ctx.getImageData(0, 0, textWidth + 10, 60);
+        var dots = [];
+        for (let i = 0; i < data.height; i++) {
+            for (let j = 0; j < data.width; j++) {
+                let alpha = data.data[j * 4 + i * data.width * 4 - 1];
+                if (alpha > 0) {
+                    dots.push({ x: j, y: i, alpha });
+                }
+            }
+        }
+
+        dots.forEach((dot, index) => {
+            initDot(dot, index);
+            ctx.save();
+            ctx.fillStyle = dot.color;
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, radias, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        });
+
+        leftDots.forEach((dot) => {
+            dot.vy += gravity;
+            if (dot.x <= radias || dot.x >= width - radias) {
+                dot.vx = 0 - dot.vx;
+            }
+            if (dot.y <= radias || dot.y >= height - radias) {
+                dot.vy = 0 - dot.vy * 0.7;
+            }
+            dot.x += dot.vx;
+            dot.y += dot.vy;
+            ctx.save();
+            ctx.fillStyle = dot.color;
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, radias, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        })
+        if (text !== textTemp) {
+            leftDots = leftDots.concat(dots);
+            if (leftDots.length > maxNum) {
+                leftDots = leftDots.slice(leftDots.length - maxNum);
+            }
+            text = textTemp;
+        }
+        requestAnimationFrame(anni);
+    }
+    anni();
+</script>
+
+</html>
